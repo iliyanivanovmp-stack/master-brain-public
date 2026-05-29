@@ -1,0 +1,18 @@
+{
+  "name": "memory-system",
+  "version": "1.0.0",
+  "description": "A complete memory architecture for Claude Code — three skills working together. wrap-up captures every conversation to Pinecone. recall semantic-searches your past chats and reference knowledge. strategy-awareness governs your living strategy document. Three buckets: Memory, Knowledge, Profile.",
+  "author": {
+    "name": "Jack Roberts"
+  },
+  "skills": [
+    "skills/wrap-up",
+    "skills/recall",
+    "skills/strategy-awareness"
+  ],
+  "commands": [
+    "commands/wrap-up.md",
+    "commands/recall.md",
+    "commands/strategy.md"
+  ]
+}

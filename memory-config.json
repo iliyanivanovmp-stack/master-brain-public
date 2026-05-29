@@ -1,0 +1,16 @@
+{
+  "personal_index": "personal-memory",
+  "knowledge_indexes": [
+    {
+      "name": "knowledge-base",
+      "topic": "Sales, marketing, cold email, content creation, business operations, research, AI automation frameworks"
+    }
+  ],
+  "execution_index": {
+    "name": "knowledge-base",
+    "namespace": "execution-registry",
+    "topic": "Execution cards for content creation and business operations workflows"
+  },
+  "embedding_model": "llama-text-embed-v2",
+  "dimension": 1024
+}

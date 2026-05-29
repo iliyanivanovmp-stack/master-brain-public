@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Strategy &amp; Awareness — How It Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070810;
+    --card: #0f1119;
+    --card-2: #131623;
+    --ui: #171a27;
+    --ui-2: #1b1e2c;
+    --border: #242838;
+    --border-2: #2e3244;
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
+    --dim: #6b7280;
+    --faint: #4b5563;
+    --blue: #60a5fa;
+    --orange: #ff6b35;
+    --orange-2: #ff8c5a;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #ef4444;
+    --purple: #a78bfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg); color: var(--text);
+    line-height: 1.55; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden; min-height: 100vh; position: relative;
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(900px at 12% 8%, rgba(255,107,53,0.08), transparent 60%),
+      radial-gradient(700px at 88% 80%, rgba(167,139,250,0.07), transparent 60%);
+    pointer-events: none; z-index: 0;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes typeIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes flash { 0%,100% { background: var(--ui); } 50% { background: rgba(74,222,128,0.15); } }
+
+  .wrap { position: relative; z-index: 2; max-width: 1080px; margin: 0 auto; padding: 60px 24px 80px; }
+
+  /* ===== HERO ===== */
+  .hero { text-align: center; margin-bottom: 80px; }
+  .hero .eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; color: var(--orange-2); text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .hero .eyebrow::before, .hero .eyebrow::after {
+    content: ''; width: 28px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--orange));
+  }
+  .hero .eyebrow::after { background: linear-gradient(90deg, var(--orange), transparent); }
+  .hero h1 {
+    font-size: clamp(40px, 6vw, 72px); font-weight: 900; letter-spacing: -0.035em;
+    line-height: 1.02; margin-bottom: 18px;
+  }
+  .hero h1 .accent {
+    background: linear-gradient(135deg, var(--orange-2), #ffb787, var(--orange));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero .lead {
+    font-size: 18px; color: var(--muted); max-width: 640px; margin: 0 auto;
+    line-height: 1.55;
+  }
+
+  /* ===== SECTION ===== */
+  section { margin-bottom: 90px; }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.16em; color: var(--orange-2); text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  h2 {
+    font-size: clamp(28px, 3.4vw, 42px); font-weight: 800; letter-spacing: -0.025em;
+    line-height: 1.1; margin-bottom: 14px;
+  }
+  .section-lead {
+    font-size: 16px; color: var(--muted); max-width: 720px; margin-bottom: 32px;
+  }
+
+  /* ===== BUCKET CARDS ===== */
+  .buckets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 800px) { .buckets { grid-template-columns: 1fr; } }
+  .bucket {
+    padding: 24px 22px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 16px;
+    position: relative; transition: all 0.25s;
+  }
+  .bucket:hover { border-color: var(--border-2); transform: translateY(-2px); }
+  .bucket .b-emoji { font-size: 30px; margin-bottom: 12px; display: block; }
+  .bucket .b-tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px;
+  }
+  .bucket h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.015em; margin-bottom: 8px; }
+  .bucket .b-desc { font-size: 13.5px; color: var(--muted); line-height: 1.55; margin-bottom: 14px; }
+  .bucket .b-where {
+    padding-top: 12px; border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+    color: var(--text); font-weight: 600;
+  }
+  .bucket .b-where small { display: block; color: var(--dim); font-size: 9.5px; letter-spacing: 0.1em; margin-bottom: 4px; text-transform: uppercase; font-weight: 700; }
+  .bucket-memory { --c: var(--orange); }
+  .bucket-knowledge { --c: var(--blue); }
+  .bucket-profile { --c: var(--purple); }
+  .bucket .b-tag { color: var(--c); }
+  .bucket::before {
+    content: ''; position: absolute; top: 0; left: 24px; right: 24px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--c), transparent);
+    opacity: 0.7;
+  }
+
+  /* ===== TABLE ===== */
+  .table-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    overflow: hidden;
+  }
+  .table-card table { width: 100%; border-collapse: collapse; }
+  .table-card th, .table-card td {
+    padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .table-card th {
+    background: var(--ui-2); font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--dim); text-transform: uppercase;
+  }
+  .table-card td.label { font-weight: 700; color: var(--text); }
+  .table-card td.path { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--orange-2); }
+  .table-card tr:last-child td { border-bottom: none; }
+
+  /* ===== MODES ===== */
+  .modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 880px) { .modes { grid-template-columns: 1fr 1fr; } }
+  .mode {
+    padding: 22px 20px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; transition: all 0.3s;
+  }
+  .mode:hover { border-color: var(--orange); transform: translateY(-2px); }
+  .mode .m-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    color: var(--orange-2); letter-spacing: 0.1em; margin-bottom: 8px;
+  }
+  .mode h4 { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .mode p { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+  .mode .m-trigger {
+    padding: 8px 12px; background: var(--ui-2); border: 1px solid var(--border);
+    border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--text); font-style: italic;
+  }
+  .mode .m-trigger::before { content: '"'; color: var(--orange); }
+  .mode .m-trigger::after { content: '"'; color: var(--orange); }
+
+  /* ===== SIMULATOR ===== */
+  .sim-wrap {
+    background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+    overflow: hidden;
+  }
+  .sim-bar {
+    padding: 14px 20px; background: var(--ui-2); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sim-bar .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .sim-bar .dot.r { background: #ff5f57; }
+  .sim-bar .dot.y { background: #febc2e; }
+  .sim-bar .dot.g { background: #28c840; }
+  .sim-bar .label { margin-left: 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+  .sim-grid { display: grid; grid-template-columns: 1fr 1fr; min-height: 540px; }
+  @media (max-width: 880px) { .sim-grid { grid-template-columns: 1fr; } }
+  .sim-left {
+    padding: 24px; border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    background: linear-gradient(180deg, rgba(255,107,53,0.03), transparent);
+  }
+  .sim-left h5 {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.12em; color: var(--orange-2); text-transform: uppercase; margin-bottom: 12px;
+  }
+  .sim-prompts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .sim-prompt {
+    text-align: left; padding: 12px 14px; background: var(--ui); border: 1px solid var(--border);
+    border-radius: 10px; font-size: 13px; color: var(--text); cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: all 0.2s;
+    line-height: 1.45;
+  }
+  .sim-prompt:hover { border-color: var(--orange); background: rgba(255,107,53,0.05); transform: translateY(-1px); }
+  .sim-prompt .pmeta {
+    display: block; font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+    color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px;
+    font-weight: 700;
+  }
+  .sim-pmeta-conflict { color: var(--red) !important; }
+  .sim-pmeta-decision { color: var(--amber) !important; }
+  .sim-pmeta-win { color: var(--green) !important; }
+  .sim-pmeta-insight { color: var(--blue) !important; }
+  .sim-pmeta-pivot { color: var(--purple) !important; }
+
+  .sim-feedback {
+    margin-top: auto; padding: 14px; background: var(--ui-2); border: 1px solid var(--border);
+    border-radius: 10px; font-size: 13px; color: var(--muted); min-height: 80px;
+    line-height: 1.5;
+  }
+  .sim-feedback.active { border-color: var(--green); background: rgba(74,222,128,0.06); color: var(--text); }
+  .sim-feedback.conflict { border-color: var(--red); background: rgba(239,68,68,0.06); color: var(--text); }
+  .sim-feedback strong { color: var(--orange-2); }
+  .sim-feedback .arrow { color: var(--green); margin-right: 6px; }
+  .sim-feedback.conflict .arrow { color: var(--red); }
+
+  .sim-right {
+    padding: 0; display: flex; flex-direction: column;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  }
+  .sim-file-bar {
+    padding: 10px 18px; background: var(--ui-2); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .sim-file-bar .fname { font-size: 12px; color: var(--text); font-weight: 600; }
+  .sim-file-bar .fmeta { font-size: 10px; color: var(--dim); letter-spacing: 0.08em; }
+  .sim-file {
+    flex: 1; padding: 18px 22px; overflow-y: auto; max-height: 540px;
+    line-height: 1.7; color: var(--text);
+  }
+  .sim-file h6 {
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; color: var(--text);
+    margin: 14px 0 6px; letter-spacing: -0.01em;
+  }
+  .sim-file h6:first-child { margin-top: 0; }
+  .sim-file .heading-h1 {
+    font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 800; color: var(--text);
+    margin-bottom: 4px; letter-spacing: -0.015em;
+  }
+  .sim-file .meta-line { color: var(--dim); font-style: italic; font-size: 11px; margin-bottom: 16px; }
+  .sim-file ul { list-style: none; padding: 0; margin: 0 0 4px; }
+  .sim-file li { padding: 2px 0 2px 14px; position: relative; color: var(--muted); font-size: 11.5px; }
+  .sim-file li::before { content: '−'; position: absolute; left: 0; color: var(--dim); }
+  .sim-file li.new { animation: typeIn 0.6s ease, flash 1.2s ease 0.6s; color: var(--text); }
+  .sim-file li.new::before { color: var(--green); content: '+'; }
+  .sim-file li .date { color: var(--orange-2); margin-right: 6px; }
+  .sim-file li.dont::before { color: var(--red); content: '✕'; }
+
+  .sim-controls {
+    padding: 14px 20px; background: var(--ui-2); border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: center;
+  }
+  .sim-btn {
+    padding: 8px 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    font-weight: 700; letter-spacing: 0.08em; border-radius: 100px; cursor: pointer;
+    border: 1px solid var(--border-2); background: var(--ui); color: var(--text);
+    transition: all 0.2s;
+  }
+  .sim-btn:hover { border-color: var(--orange); color: var(--orange-2); }
+  .sim-btn.reset { margin-left: auto; }
+
+  /* ===== INSTALL ===== */
+  .install-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px 32px;
+  }
+  .install-card .step {
+    display: flex; gap: 16px; padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .install-card .step:last-child { border-bottom: none; }
+  .step-num {
+    flex: 0 0 32px; width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--orange-2), var(--orange));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+    color: white; box-shadow: 0 4px 12px rgba(255,107,53,0.25);
+  }
+  .step-body { flex: 1; }
+  .step-body h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .step-body p { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+  .step-body code, .install-card code {
+    display: block; padding: 10px 14px; background: var(--ui); border: 1px solid var(--border);
+    border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--orange-2); white-space: pre; overflow-x: auto;
+  }
+  .step-body code.inline {
+    display: inline; padding: 2px 6px; font-size: 11.5px; color: var(--text);
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    margin-top: 80px; padding-top: 30px; border-top: 1px solid var(--border);
+    text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--dim); letter-spacing: 0.1em;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="eyebrow">How it works</div>
+    <h1>Three buckets.<br/><span class="accent">One file. One skill.</span></h1>
+    <p class="lead">A walkthrough of the memory architecture, the Strategy &amp; Awareness skill, and how Claude actually updates your strategy as you work.</p>
+  </div>
+
+  <!-- SECTION 1 — THREE BUCKETS -->
+  <section>
+    <div class="section-num">01 — The mental model</div>
+    <h2>Three buckets. Three different jobs.</h2>
+    <p class="section-lead">Most "memory frameworks" try to do everything in one place. That's the wrong question. There are three distinct jobs — each goes to its natural home.</p>
+
+    <div class="buckets">
+      <div class="bucket bucket-memory">
+        <span class="b-emoji">🧠</span>
+        <div class="b-tag">▸ Bucket 01</div>
+        <h3>Memory</h3>
+        <p class="b-desc">Every conversation you've ever had with Claude. Append-only. The diary.</p>
+        <div class="b-where"><small>Lives in</small>Pinecone (one personal index)</div>
+      </div>
+      <div class="bucket bucket-knowledge">
+        <span class="b-emoji">📚</span>
+        <div class="b-tag">▸ Bucket 02</div>
+        <h3>Knowledge</h3>
+        <p class="b-desc">Books, transcripts, your YouTube catalog, expert refs, community sentiment. The library.</p>
+        <div class="b-where"><small>Lives in</small>Pinecone (one index per topic)</div>
+      </div>
+      <div class="bucket bucket-profile">
+        <span class="b-emoji">📄</span>
+        <div class="b-tag">▸ Bucket 03</div>
+        <h3>Profile</h3>
+        <p class="b-desc">What you're working on right now. Current focus. Today's truth. The sticky note.</p>
+        <div class="b-where"><small>Lives in</small>~/.claude/strategy.md</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 — WHERE -->
+  <section>
+    <div class="section-num">02 — Where each bucket lives</div>
+    <h2>Three paths. One sentence each.</h2>
+    <p class="section-lead">The whole system is one Pinecone account, one markdown file, and three small skills.</p>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr><th>Bucket</th><th>What's there</th><th>Storage</th><th>Skill that touches it</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="label">🧠 Memory</td>
+            <td>Session summaries, past decisions</td>
+            <td class="path">Pinecone · personal-memory</td>
+            <td><code style="font-size:11px;color:var(--orange-2);font-family:monospace;">wrap-up</code></td>
+          </tr>
+          <tr>
+            <td class="label">📚 Knowledge</td>
+            <td>Books, transcripts, expert refs</td>
+            <td class="path">Pinecone · your-youtube, hormozi, …</td>
+            <td><code style="font-size:11px;color:var(--orange-2);font-family:monospace;">recall</code></td>
+          </tr>
+          <tr>
+            <td class="label">📄 Profile</td>
+            <td>Current focus, decisions, voice rules</td>
+            <td class="path">~/.claude/strategy.md</td>
+            <td><code style="font-size:11px;color:var(--orange-2);font-family:monospace;">strategy-awareness</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SECTION 3 — FOUR MODES -->
+  <section>
+    <div class="section-num">03 — The skill</div>
+    <h2>The Strategy &amp; Awareness skill operates in four modes.</h2>
+    <p class="section-lead">It auto-fires when conversation surfaces strategic substance. You never have to think about it — Claude routes the moment to the right section.</p>
+
+    <div class="modes">
+      <div class="mode">
+        <div class="m-num">MODE 01</div>
+        <h4>Setup</h4>
+        <p>First run. Six clarifying questions. Generates your starter strategy file from the template.</p>
+        <div class="m-trigger">Run my strategy setup.</div>
+      </div>
+      <div class="mode">
+        <div class="m-num">MODE 02</div>
+        <h4>Capture</h4>
+        <p>Auto-fires when you mention something strategic. Reads file, picks the right section, appends a dated line.</p>
+        <div class="m-trigger">Three customers asked for Slack today.</div>
+      </div>
+      <div class="mode">
+        <div class="m-num">MODE 03</div>
+        <h4>Reflect</h4>
+        <p>When you're working on something, surfaces relevant existing strategy and any conflicts with your Don't-Do list.</p>
+        <div class="m-trigger">Let's add a dashboard feature.</div>
+      </div>
+      <div class="mode">
+        <div class="m-num">MODE 04</div>
+        <h4>Query</h4>
+        <p>You ask a strategic question. Returns the relevant section verbatim plus a 2-line synthesis.</p>
+        <div class="m-trigger">What's my current pricing strategy?</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 — INTERACTIVE SIMULATOR -->
+  <section>
+    <div class="section-num">04 — Try it</div>
+    <h2>Watch the skill update <code style="font-family:'JetBrains Mono',monospace;font-size:0.9em;color:var(--orange-2);">strategy.md</code> in real time.</h2>
+    <p class="section-lead">Tap one of the prompts on the left. The skill identifies the right section, appends the entry, and reflects any conflict.</p>
+
+    <div class="sim-wrap">
+      <div class="sim-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="label">Claude Code · strategy-awareness skill · live</span>
+      </div>
+      <div class="sim-grid">
+        <div class="sim-left">
+          <h5>▸ You say to Claude…</h5>
+          <div class="sim-prompts" id="prompts">
+            <button class="sim-prompt" data-i="0">
+              <span class="pmeta sim-pmeta-insight">Customer Insight</span>
+              "Three customers asked for Slack integration this week."
+            </button>
+            <button class="sim-prompt" data-i="1">
+              <span class="pmeta sim-pmeta-pivot">Focus Shift</span>
+              "I'm pivoting toward enterprise."
+            </button>
+            <button class="sim-prompt" data-i="2">
+              <span class="pmeta sim-pmeta-win">Win</span>
+              "We just hit $100K MRR."
+            </button>
+            <button class="sim-prompt" data-i="3">
+              <span class="pmeta sim-pmeta-conflict">Conflict</span>
+              "Let's add a dashboard feature."
+            </button>
+            <button class="sim-prompt" data-i="4">
+              <span class="pmeta sim-pmeta-decision">Decision</span>
+              "I decided to drop the agency offering."
+            </button>
+          </div>
+          <div class="sim-feedback" id="feedback">
+            <span style="color:var(--dim);font-style:italic;">Tap a prompt to see what the skill does.</span>
+          </div>
+        </div>
+        <div class="sim-right">
+          <div class="sim-file-bar">
+            <span class="fname">~/.claude/strategy.md</span>
+            <span class="fmeta" id="updated">Last updated: 2026-04-26</span>
+          </div>
+          <div class="sim-file" id="file">
+            <div class="heading-h1"># Acme — Strategy & Awareness</div>
+            <div class="meta-line">Last updated: 2026-04-26</div>
+
+            <h6>## Current Focus</h6>
+            <ul id="s-focus">
+              <li>Land 10 enterprise design partners by end of Q2</li>
+            </ul>
+
+            <h6>## Active Offers / Products</h6>
+            <ul id="s-offers">
+              <li>Core platform · $1.5K–$12K/mo</li>
+              <li>Agency services (custom)</li>
+            </ul>
+
+            <h6>## Don't-Do List</h6>
+            <ul id="s-dont">
+              <li class="dont">No dashboard rebuild this quarter</li>
+              <li class="dont">No SMB plan under $500/mo</li>
+            </ul>
+
+            <h6>## Decisions Log</h6>
+            <ul id="s-decisions">
+              <li><span class="date">2026-04-22</span>Killed consumer dashboard project</li>
+              <li><span class="date">2026-04-15</span>Raised retainer floor to $15K</li>
+            </ul>
+
+            <h6>## Customer Insights</h6>
+            <ul id="s-insights">
+              <li><span class="date">2026-04-19</span>Onboarding cited as #1 churn reason</li>
+            </ul>
+
+            <h6>## Wins</h6>
+            <ul id="s-wins">
+              <li><span class="date">2026-04-22</span>Closed $50K ACV deal (FinTech)</li>
+            </ul>
+          </div>
+          <div class="sim-controls">
+            <span class="sim-btn" id="auto-cycle">▶ Auto-demo</span>
+            <span class="sim-btn reset" id="reset">↺ Reset</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 — INSTALL -->
+  <section>
+    <div class="section-num">05 — Get it running</div>
+    <h2>Three steps. Two minutes.</h2>
+    <p class="section-lead">The whole package lives at <code class="inline" style="display:inline;padding:2px 8px;background:var(--ui);border:1px solid var(--border);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--orange-2);">~/Desktop/strategy-awareness/</code>. Three steps to install it for yourself.</p>
+
+    <div class="install-card">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Copy the skill into Claude's skills directory</h4>
+          <p>This is where Claude Code looks for global skills.</p>
+          <code>mkdir -p ~/.claude/skills/strategy-awareness
+cp ~/Desktop/strategy-awareness/SKILL.md ~/.claude/skills/strategy-awareness/</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Open any Claude Code session and run setup</h4>
+          <p>Type this and answer the six questions. Claude will create your starter strategy file.</p>
+          <code>Run my strategy setup.</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>That's it. Just talk to Claude.</h4>
+          <p>From now on, when you mention strategic stuff in normal conversation, the skill captures it. To check what it knows, ask: <code class="inline">"Show my strategy."</code></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    Strategy &amp; Awareness · ~200 lines of skill · zero dependencies
+  </div>
+
+</div>
+
+<script>
+  // ===== SIMULATOR LOGIC =====
+  const prompts = [
+    {
+      // 0 — customer insight
+      sectionId: 's-insights',
+      newLine: 'Slack integration requested by 3 customers this week',
+      feedback: '<span class="arrow">▸</span><strong>Logged to Customer Insights.</strong> Pattern detected: this is the 4th Slack-adjacent signal in 30 days. Want me to elevate to Current Focus?',
+      type: 'active'
+    },
+    {
+      // 1 — focus shift / pivot
+      sectionId: 's-focus',
+      newLine: 'Pivoting toward enterprise (was: design partners → focus narrowed)',
+      feedback: '<span class="arrow">▸</span><strong>Updated Current Focus.</strong> Logged the pivot in Decisions Log with today\'s date. Heads-up: your Customer Insights are SMB-heavy. Want me to flag that as a tension?',
+      type: 'active',
+      alsoLog: { sectionId: 's-decisions', line: 'Pivoted toward enterprise focus' }
+    },
+    {
+      // 2 — win
+      sectionId: 's-wins',
+      newLine: 'Hit $100K MRR',
+      feedback: '<span class="arrow">▸</span><strong>Logged to Wins.</strong>',
+      type: 'active'
+    },
+    {
+      // 3 — conflict
+      sectionId: null,
+      newLine: null,
+      feedback: '<span class="arrow">⚠</span><strong>Conflict detected.</strong> Your Don\'t-Do list says <em>"No dashboard rebuild this quarter."</em> Customer Insights show 0 dashboard requests so far. Hold the line, or update Don\'t-Do?',
+      type: 'conflict'
+    },
+    {
+      // 4 — decision
+      sectionId: 's-decisions',
+      newLine: 'Decided to drop the agency offering — focus on SaaS',
+      feedback: '<span class="arrow">▸</span><strong>Logged to Decisions Log.</strong> I also removed "Agency services (custom)" from your Active Offers. Add "agency revival" to your Don\'t-Do list?',
+      type: 'active',
+      alsoRemove: { sectionId: 's-offers', match: 'Agency services' }
+    }
+  ];
+
+  function todayISO() {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  }
+
+  function appendLine(sectionId, line) {
+    const ul = document.getElementById(sectionId);
+    if (!ul) return;
+    const li = document.createElement('li');
+    li.classList.add('new');
+    li.innerHTML = `<span class="date">${todayISO()}</span>${line}`;
+    ul.appendChild(li);
+    document.getElementById('updated').textContent = `Last updated: ${todayISO()}`;
+    // scroll the file into view of new line
+    li.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  function removeLineMatching(sectionId, match) {
+    const ul = document.getElementById(sectionId);
+    if (!ul) return;
+    [...ul.children].forEach(li => {
+      if (li.textContent.includes(match)) {
+        li.style.transition = 'all 0.5s ease';
+        li.style.opacity = '0.3';
+        li.style.textDecoration = 'line-through';
+      }
+    });
+  }
+
+  function setFeedback(html, type) {
+    const fb = document.getElementById('feedback');
+    fb.classList.remove('active', 'conflict');
+    if (type) fb.classList.add(type);
+    fb.innerHTML = html;
+  }
+
+  function runPrompt(i) {
+    const p = prompts[i];
+    setFeedback('<span style="color:var(--muted);font-style:italic;">Reading strategy.md… identifying section… writing entry…</span>', null);
+    setTimeout(() => {
+      if (p.sectionId && p.newLine) appendLine(p.sectionId, p.newLine);
+      if (p.alsoLog) appendLine(p.alsoLog.sectionId, p.alsoLog.line);
+      if (p.alsoRemove) removeLineMatching(p.alsoRemove.sectionId, p.alsoRemove.match);
+      setFeedback(p.feedback, p.type);
+    }, 700);
+  }
+
+  document.querySelectorAll('.sim-prompt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.i, 10);
+      runPrompt(i);
+    });
+  });
+
+  // Auto-cycle demo
+  let cycleTimer = null;
+  let cycleIndex = 0;
+  document.getElementById('auto-cycle').addEventListener('click', () => {
+    if (cycleTimer) {
+      clearInterval(cycleTimer);
+      cycleTimer = null;
+      document.getElementById('auto-cycle').textContent = '▶ Auto-demo';
+      return;
+    }
+    document.getElementById('auto-cycle').textContent = '⏸ Pause demo';
+    cycleIndex = 0;
+    runPrompt(cycleIndex);
+    cycleTimer = setInterval(() => {
+      cycleIndex = (cycleIndex + 1) % prompts.length;
+      if (cycleIndex === 0) {
+        // reset before looping
+        location.reload();
+        return;
+      }
+      runPrompt(cycleIndex);
+    }, 4500);
+  });
+
+  // Reset
+  document.getElementById('reset').addEventListener('click', () => {
+    if (cycleTimer) { clearInterval(cycleTimer); cycleTimer = null; }
+    location.reload();
+  });
+</script>
+
+</body>
+</html>

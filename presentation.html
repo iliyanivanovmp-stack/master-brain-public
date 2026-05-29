@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Brain — AI Memory Operating System</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #08080f;
+    --surface: #0f0f1a;
+    --surface2: #16162a;
+    --border: rgba(255,255,255,0.07);
+    --purple: #7c6fff;
+    --purple-dim: rgba(124,111,255,0.15);
+    --blue: #4f8eff;
+    --teal: #2dd4bf;
+    --rose: #f472b6;
+    --amber: #fbbf24;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-mid: #94a3b8;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── SLIDES ── */
+  .deck { width: 100%; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 80px;
+    opacity: 0; pointer-events: none;
+    transform: translateY(24px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+  .slide.active {
+    opacity: 1; pointer-events: all; transform: translateY(0);
+  }
+  .slide.exit {
+    opacity: 0; transform: translateY(-24px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .slide-inner { width: 100%; max-width: 1100px; }
+
+  /* ── NAV ── */
+  #nav {
+    position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 10px; z-index: 100;
+    background: rgba(15,15,26,0.85); border: 1px solid var(--border);
+    padding: 10px 20px; border-radius: 100px;
+    backdrop-filter: blur(12px);
+  }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text-dim); cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .dot.on { background: var(--purple); transform: scale(1.3); }
+  #counter {
+    font-size: 11px; color: var(--text-dim);
+    margin-left: 8px; font-variant-numeric: tabular-nums;
+  }
+
+  /* ── KEY HINT ── */
+  #hint {
+    position: fixed; bottom: 36px; right: 40px;
+    font-size: 11px; color: var(--text-dim);
+    display: flex; gap: 8px;
+  }
+  .key {
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 2px 7px; font-size: 11px; color: var(--text-dim);
+  }
+
+  /* ── TYPOGRAPHY ── */
+  .label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--purple);
+    margin-bottom: 12px;
+  }
+  h1 { font-size: clamp(40px, 5vw, 64px); font-weight: 700; line-height: 1.1; }
+  h2 { font-size: clamp(28px, 3.5vw, 44px); font-weight: 700; line-height: 1.15; }
+  h3 { font-size: 20px; font-weight: 600; }
+  .sub { font-size: 18px; color: var(--text-mid); line-height: 1.6; margin-top: 16px; }
+  .dim { color: var(--text-dim); }
+  strong { color: var(--text); }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px 32px;
+  }
+  .card-sm {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 24px;
+  }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  /* ── PILL / BADGE ── */
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 600;
+  }
+  .pill-purple { background: rgba(124,111,255,0.15); color: #a99fff; border: 1px solid rgba(124,111,255,0.25); }
+  .pill-teal   { background: rgba(45,212,191,0.12);  color: #5eead4; border: 1px solid rgba(45,212,191,0.2); }
+  .pill-rose   { background: rgba(244,114,182,0.12); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.2); }
+  .pill-amber  { background: rgba(251,191,36,0.12);  color: #fcd34d; border: 1px solid rgba(251,191,36,0.2); }
+  .pill-blue   { background: rgba(79,142,255,0.12);  color: #93c5fd; border: 1px solid rgba(79,142,255,0.2); }
+
+  /* ── MONO ── */
+  code {
+    font-family: 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 0.88em;
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 2px 7px; border-radius: 5px; color: #a99fff;
+  }
+
+  /* ── DIVIDER ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* ── GRADIENT TEXT ── */
+  .grad {
+    background: linear-gradient(135deg, #a99fff 0%, #4f8eff 50%, #2dd4bf 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── ROW ── */
+  .row { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+  .row-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    text-align: left; padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim); font-weight: 600; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text-mid); vertical-align: top; }
+  td:first-child { color: var(--text); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* ── ARCHITECTURE SVG SLIDE ── */
+  .arch-wrap { display: flex; flex-direction: column; align-items: center; gap: 32px; }
+  .arch-row { display: flex; align-items: center; justify-content: center; gap: 0; width: 100%; }
+  .arch-node {
+    border-radius: 14px; padding: 18px 24px;
+    text-align: center; border: 1px solid; min-width: 160px;
+    position: relative;
+  }
+  .arch-node-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .arch-node-sub { font-size: 11px; opacity: 0.7; }
+
+  .node-user { background: rgba(124,111,255,0.1); border-color: rgba(124,111,255,0.4); }
+  .node-claude { background: rgba(79,142,255,0.1); border-color: rgba(79,142,255,0.4); }
+  .node-strategy { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); }
+  .node-pinecone { background: rgba(45,212,191,0.1); border-color: rgba(45,212,191,0.3); }
+  .node-kb { background: rgba(45,212,191,0.07); border-color: rgba(45,212,191,0.2); }
+  .node-mem { background: rgba(124,111,255,0.07); border-color: rgba(124,111,255,0.2); }
+  .node-exec { background: rgba(244,114,182,0.07); border-color: rgba(244,114,182,0.2); }
+  .node-obsidian { background: rgba(100,116,139,0.1); border-color: rgba(100,116,139,0.3); }
+
+  .arrow { color: var(--text-dim); font-size: 20px; padding: 0 12px; user-select: none; }
+  .arrow-down { display: flex; justify-content: center; color: var(--text-dim); font-size: 20px; margin: -8px 0; }
+
+  /* ── FLOW ── */
+  .flow-step {
+    display: flex; gap: 16px; align-items: flex-start; padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .flow-step:last-child { border-bottom: none; }
+  .flow-num {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    background: var(--purple-dim); border: 1px solid rgba(124,111,255,0.3);
+    color: var(--purple); margin-top: 2px;
+  }
+
+  /* ── METRIC BOX ── */
+  .metric { text-align: center; padding: 24px; }
+  .metric-num { font-size: 42px; font-weight: 800; }
+  .metric-label { font-size: 13px; color: var(--text-dim); margin-top: 6px; }
+
+  /* ── SLIDE 1 COVER ── */
+  #s1 { background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,111,255,0.08) 0%, transparent 70%); }
+  .cover-eye {
+    width: 72px; height: 72px; border-radius: 20px;
+    background: linear-gradient(135deg, #7c6fff, #4f8eff);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; margin-bottom: 28px;
+    box-shadow: 0 0 40px rgba(124,111,255,0.3);
+  }
+  .cover-tags { display: flex; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
+
+  /* ── QUOTE BOX ── */
+  .quote {
+    background: var(--purple-dim); border: 1px solid rgba(124,111,255,0.25);
+    border-left: 3px solid var(--purple);
+    border-radius: 0 12px 12px 0; padding: 18px 24px;
+    font-size: 16px; color: var(--text); font-style: italic; line-height: 1.6;
+  }
+
+  /* ── TAG LINE ── */
+  .tagrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 1 — COVER
+  ════════════════════════════════════════════ -->
+  <div class="slide active" id="s1">
+    <div class="slide-inner">
+      <div class="cover-eye">🧠</div>
+      <div class="label">AIessentials</div>
+      <h1>Master Brain</h1>
+      <h1 class="grad">AI Memory Operating System</h1>
+      <p class="sub">A three-layer architecture that gives AI agents complete, persistent context — <br>so every session starts exactly where the last one ended.</p>
+      <div class="cover-tags">
+        <span class="pill pill-purple">Pinecone Vector DB</span>
+        <span class="pill pill-teal">Claude Code Skills</span>
+        <span class="pill pill-blue">Semantic Search</span>
+        <span class="pill pill-amber">Execution Registry</span>
+        <span class="pill pill-rose">Zero Browsing</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 2 — THE PROBLEM
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s2">
+    <div class="slide-inner">
+      <div class="label">The Problem</div>
+      <h2>AI agents are <span class="grad">stateless by default</span></h2>
+      <p class="sub" style="margin-bottom:32px;">Without a memory architecture, every Claude session restarts from zero. The agent doesn't know what you decided, what you know, or what you're trying to do.</p>
+      <div class="grid-2" style="gap:24px;">
+        <div class="card" style="border-color:rgba(244,114,182,0.2);">
+          <div style="font-size:24px;margin-bottom:12px;">❌</div>
+          <h3 style="margin-bottom:14px;color:#f9a8d4;">Without Master Brain</h3>
+          <div class="flow-step" style="padding:10px 0;">
+            <div style="color:var(--text-dim);line-height:1.6;font-size:14px;">Re-explain your business every session</div>
+          </div>
+          <div class="flow-step" style="padding:10px 0;">
+            <div style="color:var(--text-dim);line-height:1.6;font-size:14px;">Decisions made last week are forgotten</div>
+          </div>
+          <div class="flow-step" style="padding:10px 0;">
+            <div style="color:var(--text-dim);line-height:1.6;font-size:14px;">Frameworks live in files nobody queries</div>
+          </div>
+          <div class="flow-step" style="padding:10px 0;border-bottom:none;">
+            <div style="color:var(--text-dim);line-height:1.6;font-size:14px;">Agent browses folders hoping to find context</div>
+          </div>
+        </div>
+        <div class="card" style="border-color:rgba(45,212,191,0.2);">
+          <div style="font-size:24px;margin-bottom:12px;">✅</div>
+          <h3 style="margin-bottom:14px;color:#5eead4;">With Master Brain</h3>
+          <div class="flow-step" style="padding:10px 0;">
+            <div style="color:var(--text-mid);line-height:1.6;font-size:14px;">Strategy loads automatically — no prompt needed</div>
+          </div>
+          <div class="flow-step" style="padding:10px 0;">
+            <div style="color:var(--text-mid);line-height:1.6;font-size:14px;">Past decisions are searchable and dated</div>
+          </div>
+          <div class="flow-step" style="padding:10px 0;">
+            <div style="color:var(--text-mid);line-height:1.6;font-size:14px;">37-file vault instantly retrievable via query</div>
+          </div>
+          <div class="flow-step" style="padding:10px 0;border-bottom:none;">
+            <div style="color:var(--text-mid);line-height:1.6;font-size:14px;">Agent queries → gets exactly what it needs</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 3 — MENTAL MODEL
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s3">
+    <div class="slide-inner">
+      <div class="label">Mental Model</div>
+      <h2>Three layers. One invariant.</h2>
+      <div style="margin:24px 0 28px;">
+        <div class="quote">"Strategy = what's always loaded. &nbsp;Knowledge = what you pull. &nbsp;Memory = what you leave behind."</div>
+      </div>
+      <div class="grid-3" style="gap:20px;">
+        <div class="card" style="border-color:rgba(251,191,36,0.25);">
+          <div style="font-size:28px;margin-bottom:12px;">📄</div>
+          <div class="pill pill-amber" style="margin-bottom:12px;">Layer 1 — Profile</div>
+          <h3 style="margin-bottom:8px;">Strategy</h3>
+          <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">Current offers, active focus, decisions log, don't-do list. One markdown file. Auto-loaded into every session via <code>CLAUDE.md</code> pointer.</p>
+          <hr>
+          <p style="font-size:12px;color:var(--text-dim);">Skill: <code>strategy-awareness</code> &nbsp;·&nbsp; <code>/strategy</code> = visual view</p>
+        </div>
+        <div class="card" style="border-color:rgba(45,212,191,0.25);">
+          <div style="font-size:28px;margin-bottom:12px;">📚</div>
+          <div class="pill pill-teal" style="margin-bottom:12px;">Layer 2 — Knowledge</div>
+          <h3 style="margin-bottom:8px;">Vault</h3>
+          <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">37 files across 6 domains. Sales, marketing, content, ops, research, AI. Embedded in Pinecone <code>knowledge-base</code> index. Pulled on demand.</p>
+          <hr>
+          <p style="font-size:12px;color:var(--text-dim);">Skill: <code>/recall</code></p>
+        </div>
+        <div class="card" style="border-color:rgba(124,111,255,0.25);">
+          <div style="font-size:28px;margin-bottom:12px;">🧠</div>
+          <div class="pill pill-purple" style="margin-bottom:12px;">Layer 3 — Memory</div>
+          <h3 style="margin-bottom:8px;">Episodes</h3>
+          <p style="font-size:13px;color:var(--text-dim);line-height:1.6;">Every meaningful session saved as a structured summary. Embedded in Pinecone <code>personal-memory</code> index. Searchable forever.</p>
+          <hr>
+          <p style="font-size:12px;color:var(--text-dim);">Skills: <code>/wrap-up</code> + <code>/recall</code></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 4 — ARCHITECTURE DIAGRAM
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s4">
+    <div class="slide-inner">
+      <div class="label">Architecture</div>
+      <h2>How everything connects</h2>
+      <div style="margin-top:32px;">
+        <!-- Row 1: User ↔ Claude Code -->
+        <div style="display:flex;justify-content:center;gap:24px;margin-bottom:20px;">
+          <div class="arch-node node-user" style="min-width:140px;">
+            <div style="font-size:22px;margin-bottom:4px;">👤</div>
+            <div class="arch-node-title">You</div>
+            <div class="arch-node-sub">natural language</div>
+          </div>
+          <div class="arrow" style="align-self:center;">⟷</div>
+          <div class="arch-node node-claude" style="min-width:200px;">
+            <div style="font-size:22px;margin-bottom:4px;">⚡</div>
+            <div class="arch-node-title">Claude Code Session</div>
+            <div class="arch-node-sub">skills auto-fire on intent</div>
+          </div>
+          <div class="arrow" style="align-self:center;">→</div>
+          <div class="arch-node node-strategy" style="min-width:200px;">
+            <div style="font-size:22px;margin-bottom:4px;">📄</div>
+            <div class="arch-node-title">strategy.md</div>
+            <div class="arch-node-sub">auto-loaded every session</div>
+          </div>
+        </div>
+
+        <!-- Down arrow -->
+        <div class="arrow-down" style="margin-bottom:12px;">↓ queries on demand</div>
+
+        <!-- Row 2: Pinecone -->
+        <div style="display:flex;justify-content:center;margin-bottom:16px;">
+          <div class="arch-node node-pinecone" style="min-width:320px;text-align:center;">
+            <div style="font-size:22px;margin-bottom:4px;">🌲</div>
+            <div class="arch-node-title">Pinecone — <code style="background:transparent;border:none;color:#5eead4;font-size:13px;">knowledge-base</code> index</div>
+            <div class="arch-node-sub">single vector index, three namespaces</div>
+          </div>
+        </div>
+
+        <!-- Row 3: Three namespaces -->
+        <div style="display:flex;justify-content:center;gap:16px;margin-bottom:20px;">
+          <div class="arch-node node-kb" style="min-width:190px;">
+            <div style="font-size:16px;margin-bottom:4px;">📚</div>
+            <div class="arch-node-title" style="font-size:12px;">default namespace</div>
+            <div class="arch-node-sub">Knowledge Base</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">37 files · 6 domains</div>
+          </div>
+          <div class="arch-node node-mem" style="min-width:190px;">
+            <div style="font-size:16px;margin-bottom:4px;">💾</div>
+            <div class="arch-node-title" style="font-size:12px;">personal-memory</div>
+            <div class="arch-node-sub">Session Logs</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">every wrap-up session</div>
+          </div>
+          <div class="arch-node node-exec" style="min-width:190px;">
+            <div style="font-size:16px;margin-bottom:4px;">⚙️</div>
+            <div class="arch-node-title" style="font-size:12px;">execution-registry</div>
+            <div class="arch-node-sub">Workflow Cards</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">skills · SOPs · agents</div>
+          </div>
+        </div>
+
+        <!-- Row 4: Ingest scripts -->
+        <div style="display:flex;justify-content:center;gap:24px;">
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">written by you</div>
+            <div class="pill pill-teal" style="font-size:11px;">knowledge_base/ → <code style="background:transparent;border:none;">ingest_kb.py</code></div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">auto on /wrap-up</div>
+            <div class="pill pill-purple" style="font-size:11px;">session → Pinecone upsert</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">after each card</div>
+            <div class="pill pill-rose" style="font-size:11px;">execution cards → <code style="background:transparent;border:none;">ingest_registry.py</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 5 — /strategy
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s5">
+    <div class="slide-inner">
+      <div class="label">Skill 1 of 3</div>
+      <div class="tagrow">
+        <h2><code style="background:var(--surface2);border:1px solid rgba(251,191,36,0.3);color:#fcd34d;font-size:28px;padding:4px 16px;border-radius:10px;">strategy-awareness</code></h2>
+        <span class="pill pill-amber">Auto-fires · 5 Modes</span>
+      </div>
+      <p class="sub" style="margin-bottom:24px;">The governance skill that listens. When you say something strategic mid-conversation, it fires automatically — logs it to <code>strategy.md</code>, checks for conflicts. <code>/strategy</code> is just the command to open the visual dashboard (Mode 5).</p>
+      <div class="grid-2" style="gap:20px;">
+        <div class="card">
+          <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:12px;">THE 5 MODES</div>
+          <div class="flow-step" style="padding:8px 0;">
+            <div style="background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.3);color:#94a3b8;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0;width:72px;text-align:center;">SETUP</div>
+            <div style="font-size:13px;color:var(--text-dim);">First run — 6-question flow that bootstraps <code>strategy.md</code></div>
+          </div>
+          <div class="flow-step" style="padding:8px 0;">
+            <div style="background:rgba(45,212,191,0.15);border:1px solid rgba(45,212,191,0.3);color:#5eead4;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0;width:72px;text-align:center;">CAPTURE ★</div>
+            <div style="font-size:13px;color:var(--text-mid);">Auto-fires when strategic substance detected — appends dated entry, checks conflicts against Don't-Do</div>
+          </div>
+          <div class="flow-step" style="padding:8px 0;">
+            <div style="background:rgba(244,114,182,0.15);border:1px solid rgba(244,114,182,0.3);color:#f9a8d4;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0;width:72px;text-align:center;">REFLECT</div>
+            <div style="font-size:13px;color:var(--text-dim);">Surfaces conflicts before you act — "this contradicts your Don't-Do from April 22"</div>
+          </div>
+          <div class="flow-step" style="padding:8px 0;">
+            <div style="background:rgba(79,142,255,0.15);border:1px solid rgba(79,142,255,0.3);color:#93c5fd;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0;width:72px;text-align:center;">QUERY</div>
+            <div style="font-size:13px;color:var(--text-dim);">Answers "what's my strategy on X?" in text</div>
+          </div>
+          <div class="flow-step" style="padding:8px 0;border-bottom:none;">
+            <div style="background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fcd34d;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0;width:72px;text-align:center;">VISUALIZE</div>
+            <div style="font-size:13px;color:var(--text-dim);"><code>/strategy</code> command → opens interactive HTML dashboard to edit visually</div>
+          </div>
+        </div>
+        <div>
+          <div class="card-sm" style="margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:10px;">WHAT'S IN strategy.md</div>
+            <table style="font-size:13px;">
+              <tr><td style="padding:5px 0;border-bottom:1px solid var(--border);">North Star</td><td style="color:var(--text-dim);padding:5px 0 5px 12px;border-bottom:1px solid var(--border);">mission / direction</td></tr>
+              <tr><td style="padding:5px 0;border-bottom:1px solid var(--border);">Current Focus</td><td style="color:var(--text-dim);padding:5px 0 5px 12px;border-bottom:1px solid var(--border);">what's active right now</td></tr>
+              <tr><td style="padding:5px 0;border-bottom:1px solid var(--border);">Active Offers</td><td style="color:var(--text-dim);padding:5px 0 5px 12px;border-bottom:1px solid var(--border);">pricing, positioning</td></tr>
+              <tr><td style="padding:5px 0;border-bottom:1px solid var(--border);">Don't-Do List</td><td style="color:var(--text-dim);padding:5px 0 5px 12px;border-bottom:1px solid var(--border);">hard boundaries</td></tr>
+              <tr><td style="padding:5px 0;">Decisions Log</td><td style="color:var(--text-dim);padding:5px 0 5px 12px;">dated, auditable</td></tr>
+            </table>
+          </div>
+          <div style="font-size:13px;color:var(--text-dim);background:var(--surface2);border:1px solid rgba(251,191,36,0.2);border-radius:8px;padding:12px 16px;">
+            <strong style="color:var(--amber);">Key insight:</strong> The updating is automatic — just say a decision out loud. <code>/strategy</code> is only the visual view trigger. The skill governs without you invoking it.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 6 — /recall
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s6">
+    <div class="slide-inner">
+      <div class="label">Skill 2 of 3</div>
+      <div class="tagrow">
+        <h2><code style="background:var(--surface2);border:1px solid rgba(45,212,191,0.3);color:#5eead4;font-size:32px;padding:4px 16px;border-radius:10px;">/recall</code></h2>
+        <span class="pill pill-teal">Semantic Search</span>
+      </div>
+      <p class="sub" style="margin-bottom:24px;">Queries both Pinecone indexes simultaneously — your knowledge vault and your session history — and returns the most semantically relevant chunks ranked by score.</p>
+      <div class="grid-2" style="gap:20px;">
+        <div class="card">
+          <div style="font-size:12px;font-weight:600;color:var(--teal);margin-bottom:12px;">WHAT IT SEARCHES</div>
+          <div class="row" style="margin-bottom:12px;">
+            <div class="row-icon" style="background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.2);">📚</div>
+            <div>
+              <div style="font-weight:600;font-size:14px;margin-bottom:4px;">Knowledge Base</div>
+              <div style="font-size:12px;color:var(--text-dim);">Pinecone default namespace · 37 files · frameworks, tactics, templates, ICP docs, swipe files</div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="row-icon" style="background:rgba(124,111,255,0.1);border:1px solid rgba(124,111,255,0.2);">💾</div>
+            <div>
+              <div style="font-weight:600;font-size:14px;margin-bottom:4px;">Personal Memory</div>
+              <div style="font-size:12px;color:var(--text-dim);">Pinecone personal-memory namespace · all past wrap-up sessions · timestamped, searchable forever</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:12px;font-weight:600;color:var(--teal);margin-bottom:12px;">EXAMPLE QUERIES</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text-mid);">"What do I know about cold email infrastructure?"</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text-mid);">"What did we decide about pricing last month?"</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text-mid);">"Give me our objection handling frameworks"</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text-mid);">"What Hormozi concepts apply to this offer?"</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;color:var(--text-mid);">"What were we working on in April?"</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 7 — /wrap-up
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s7">
+    <div class="slide-inner">
+      <div class="label">Skill 3 of 3</div>
+      <div class="tagrow">
+        <h2><code style="background:var(--surface2);border:1px solid rgba(124,111,255,0.3);color:#a99fff;font-size:32px;padding:4px 16px;border-radius:10px;">/wrap-up</code></h2>
+        <span class="pill pill-purple">Session Logger</span>
+      </div>
+      <p class="sub" style="margin-bottom:28px;">Run at the end of every meaningful session. Generates a structured summary and embeds it into Pinecone's <code>personal-memory</code> namespace — making it instantly searchable via <code>/recall</code> forever.</p>
+      <div class="grid-2" style="gap:24px;">
+        <div>
+          <div class="card-sm" style="margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:12px;">WHAT GETS SAVED</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div class="row" style="margin-bottom:0;">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:6px;"></div>
+                <div style="font-size:13px;color:var(--text-mid);">What was worked on this session</div>
+              </div>
+              <div class="row" style="margin-bottom:0;">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:6px;"></div>
+                <div style="font-size:13px;color:var(--text-mid);">Decisions made and why</div>
+              </div>
+              <div class="row" style="margin-bottom:0;">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:6px;"></div>
+                <div style="font-size:13px;color:var(--text-mid);">Key outputs and artifacts created</div>
+              </div>
+              <div class="row" style="margin-bottom:0;">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:6px;"></div>
+                <div style="font-size:13px;color:var(--text-mid);">What's next / open threads</div>
+              </div>
+              <div class="row" style="margin-bottom:0;">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:6px;"></div>
+                <div style="font-size:13px;color:var(--text-mid);">Timestamp + date metadata for recall</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="background:var(--surface2);border:1px solid rgba(124,111,255,0.2);border-radius:12px;padding:20px 24px;margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:10px;">THE COMPOUNDING EFFECT</div>
+            <p style="font-size:13px;color:var(--text-mid);line-height:1.7;">One session = modest value. Ten sessions = searchable archive. Fifty sessions = an AI that knows your entire work history. The system compounds: each wrap-up makes every future <code>/recall</code> richer.</p>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">HABIT RULE</div>
+            <p style="font-size:13px;color:var(--text-mid);">Before closing Claude Code → run <code>/wrap-up</code>. Takes 30 seconds. Compounds forever.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 8 — KNOWLEDGE BASE
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s8">
+    <div class="slide-inner">
+      <div class="label">The Vault</div>
+      <h2>Knowledge Base — <span class="grad">37 files, 6 domains</span></h2>
+      <p class="sub" style="margin-bottom:24px;">Every framework, template, tactic, and reference document embedded in Pinecone. Added via <code>ingest_kb.py</code>. Instantly queryable by any agent session.</p>
+      <div class="grid-3" style="gap:14px;">
+        <div class="card-sm">
+          <div style="font-size:16px;margin-bottom:6px;">💰</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Sales</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Call frameworks · Objection scripts · Offer crafting · Upsell & retention</div>
+          <div style="margin-top:8px;"><span class="pill pill-amber" style="font-size:10px;">4 files</span></div>
+        </div>
+        <div class="card-sm">
+          <div style="font-size:16px;margin-bottom:6px;">📣</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Marketing</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Brand identity · Cold email writing + infra · Lead magnets · Messaging hierarchy</div>
+          <div style="margin-top:8px;"><span class="pill pill-blue" style="font-size:10px;">7 files</span></div>
+        </div>
+        <div class="card-sm">
+          <div style="font-size:16px;margin-bottom:6px;">✍️</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Content Creation</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">LinkedIn + X frameworks · Hook banks · Short-form video · YouTube system · Copywriting</div>
+          <div style="margin-top:8px;"><span class="pill pill-teal" style="font-size:10px;">15 files</span></div>
+        </div>
+        <div class="card-sm">
+          <div style="font-size:16px;margin-bottom:6px;">🏢</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Business Operations</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">Hormozi concepts · Niching · Tech stack · Client onboarding · Accounts</div>
+          <div style="margin-top:8px;"><span class="pill pill-rose" style="font-size:10px;">5 files</span></div>
+        </div>
+        <div class="card-sm">
+          <div style="font-size:16px;margin-bottom:6px;">🔬</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Research</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">B2B + B2C ICP frameworks · Reddit niche research · Pre-call template</div>
+          <div style="margin-top:8px;"><span class="pill pill-purple" style="font-size:10px;">4 files</span></div>
+        </div>
+        <div class="card-sm">
+          <div style="font-size:16px;margin-bottom:6px;">🤖</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px;">AI & Automation</div>
+          <div style="font-size:12px;color:var(--text-dim);line-height:1.6;">B.L.A.S.T. prompting · Antigravity framework · Skill building system</div>
+          <div style="margin-top:8px;"><span class="pill pill-amber" style="font-size:10px;">2 files</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 9 — EXECUTION REGISTRY
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s9">
+    <div class="slide-inner">
+      <div class="label">Execution Layer</div>
+      <h2>Execution Registry — <span class="grad">workflow as data</span></h2>
+      <p class="sub" style="margin-bottom:24px;">Every repeatable workflow lives as a structured card in <code>execution-registry</code> namespace. Agents query naturally — no folder browsing. The card tells you which skill to invoke and with what parameters.</p>
+      <div class="grid-2" style="gap:24px;">
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div style="font-size:12px;font-weight:600;color:#f9a8d4;margin-bottom:12px;">ACTIVE WORKFLOW CARDS</div>
+            <table>
+              <thead><tr><th>Card</th><th>Type</th><th>What it does</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>LinkedIn Poster</td>
+                  <td><span class="pill pill-rose" style="font-size:10px;">Hybrid</span></td>
+                  <td>Draft → approve → publish to LinkedIn</td>
+                </tr>
+                <tr>
+                  <td>X Post Writer</td>
+                  <td><span class="pill pill-rose" style="font-size:10px;">Hybrid</span></td>
+                  <td>Draft tweets/threads → publish pipeline</td>
+                </tr>
+                <tr>
+                  <td>Lead Magnet Creator</td>
+                  <td><span class="pill pill-rose" style="font-size:10px;">Hybrid</span></td>
+                  <td>Package asset → Notion/GitHub → log</td>
+                </tr>
+                <tr>
+                  <td>Adopt Workflow SOP</td>
+                  <td><span class="pill pill-purple" style="font-size:10px;">Pure Skill</span></td>
+                  <td>Review + adopt external workflow into master_brain</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div class="card-sm" style="margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:600;color:#f9a8d4;margin-bottom:10px;">CARD TYPES</div>
+            <div class="flow-step" style="padding:8px 0;">
+              <div class="pill pill-purple" style="font-size:11px;flex-shrink:0;">Pure Skill</div>
+              <div style="font-size:12px;color:var(--text-dim);">Claude executes in context. No external code.</div>
+            </div>
+            <div class="flow-step" style="padding:8px 0;">
+              <div class="pill pill-blue" style="font-size:11px;flex-shrink:0;">Execution Card</div>
+              <div style="font-size:12px;color:var(--text-dim);">Runs external script. Card is the recipe.</div>
+            </div>
+            <div class="flow-step" style="padding:8px 0;border-bottom:none;">
+              <div class="pill pill-rose" style="font-size:11px;flex-shrink:0;">Hybrid</div>
+              <div style="font-size:12px;color:var(--text-dim);">Claude drafts, script executes/publishes.</div>
+            </div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;">
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">AGENT RULE</div>
+            <p style="font-size:13px;color:var(--text-mid);">Query <code>execution-registry</code> namespace first. The card surfaces the right global skill. No folder browsing ever.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 10 — DESIGN DECISIONS
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s10">
+    <div class="slide-inner">
+      <div class="label">Why It's Built This Way</div>
+      <h2>Four design decisions that matter</h2>
+      <div style="margin-top:28px;display:flex;flex-direction:column;gap:0;">
+        <div class="flow-step">
+          <div class="flow-num" style="background:rgba(45,212,191,0.15);border-color:rgba(45,212,191,0.3);color:#5eead4;">1</div>
+          <div>
+            <div style="font-weight:600;font-size:15px;margin-bottom:4px;">Agents never browse folders — they query</div>
+            <div style="font-size:13px;color:var(--text-dim);">Browsing is O(n). Querying Pinecone is O(1). With 37+ knowledge files and growing, semantic search is the only approach that scales. The index is the interface.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num" style="background:rgba(251,191,36,0.15);border-color:rgba(251,191,36,0.3);color:#fcd34d;">2</div>
+          <div>
+            <div style="font-weight:600;font-size:15px;margin-bottom:4px;">One index, three namespaces — not three indexes</div>
+            <div style="font-size:13px;color:var(--text-dim);">Knowledge, memory, and execution registry live in the same Pinecone index under separate namespaces. Single connection, predictable schema, one ingest pattern per bucket.</div>
+          </div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-num" style="background:rgba(124,111,255,0.15);border-color:rgba(124,111,255,0.3);color:#a99fff;">3</div>
+          <div>
+            <div style="font-weight:600;font-size:15px;margin-bottom:4px;">Strategy is a file, not a query</div>
+            <div style="font-size:13px;color:var(--text-dim);">Strategic state must be available before any query can run. A pointer in <code>CLAUDE.md</code> loads it automatically. No skill invocation needed. It's the foundation, not a feature.</div>
+          </div>
+        </div>
+        <div class="flow-step" style="border-bottom:none;">
+          <div class="flow-num" style="background:rgba(244,114,182,0.15);border-color:rgba(244,114,182,0.3);color:#f9a8d4;">4</div>
+          <div>
+            <div style="font-weight:600;font-size:15px;margin-bottom:4px;">No framework, no abstraction — just three primitives</div>
+            <div style="font-size:13px;color:var(--text-dim);">One markdown file. One vector index. Three skills. There's no agent state machine, no opinionated memory framework. Everything is auditable, version-controllable, and replaceable.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 11 — DAY IN THE LIFE
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s11">
+    <div class="slide-inner">
+      <div class="label">Day-to-Day Workflow</div>
+      <h2>What a normal session looks like</h2>
+      <div style="margin-top:28px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+        <div class="card" style="border-color:rgba(79,142,255,0.2);">
+          <div style="color:#93c5fd;font-size:12px;font-weight:600;margin-bottom:14px;">▶ STARTING A SESSION</div>
+          <div class="flow-step" style="padding:8px 0;">
+            <div class="flow-num" style="font-size:10px;width:22px;height:22px;">1</div>
+            <div style="font-size:13px;color:var(--text-mid);">Claude auto-loads <code>strategy.md</code> — no action needed</div>
+          </div>
+          <div class="flow-step" style="padding:8px 0;border-bottom:none;">
+            <div class="flow-num" style="font-size:10px;width:22px;height:22px;">2</div>
+            <div style="font-size:13px;color:var(--text-mid);">Run <code>/recall [topic]</code> to pull relevant KB context before starting</div>
+          </div>
+        </div>
+        <div class="card" style="border-color:rgba(45,212,191,0.2);">
+          <div style="color:#5eead4;font-size:12px;font-weight:600;margin-bottom:14px;">⚡ DURING A SESSION</div>
+          <div class="flow-step" style="padding:8px 0;">
+            <div class="flow-num" style="font-size:10px;width:22px;height:22px;">1</div>
+            <div style="font-size:13px;color:var(--text-mid);">Make a decision → Claude logs it to <code>strategy.md</code> instantly</div>
+          </div>
+          <div class="flow-step" style="padding:8px 0;">
+            <div class="flow-num" style="font-size:10px;width:22px;height:22px;">2</div>
+            <div style="font-size:13px;color:var(--text-mid);">Need a framework → <code>/recall</code> fetches it from the vault</div>
+          </div>
+          <div class="flow-step" style="padding:8px 0;border-bottom:none;">
+            <div class="flow-num" style="font-size:10px;width:22px;height:22px;">3</div>
+            <div style="font-size:13px;color:var(--text-mid);">Executing a task → agent queries <code>execution-registry</code> first</div>
+          </div>
+        </div>
+        <div class="card" style="border-color:rgba(124,111,255,0.2);">
+          <div style="color:#a99fff;font-size:12px;font-weight:600;margin-bottom:14px;">⏹ ENDING A SESSION</div>
+          <div class="flow-step" style="padding:8px 0;">
+            <div class="flow-num" style="font-size:10px;width:22px;height:22px;">1</div>
+            <div style="font-size:13px;color:var(--text-mid);">Run <code>/wrap-up</code></div>
+          </div>
+          <div class="flow-step" style="padding:8px 0;border-bottom:none;">
+            <div class="flow-num" style="font-size:10px;width:22px;height:22px;">2</div>
+            <div style="font-size:13px;color:var(--text-mid);">That's it. Session is embedded and searchable in 30 seconds.</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:20px;" class="quote">
+        When Claude has all three layers — strategy loaded, knowledge pullable, memory searchable — it operates with full context. When any one is missing, it's flying partial.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       SLIDE 12 — SYSTEM STATS
+  ════════════════════════════════════════════ -->
+  <div class="slide" id="s12">
+    <div class="slide-inner" style="text-align:center;">
+      <div class="label" style="text-align:center;">Live System</div>
+      <h2 style="margin-bottom:32px;">What's in Master Brain <span class="grad">right now</span></h2>
+      <div class="grid-4" style="max-width:800px;margin:0 auto 32px;">
+        <div class="card metric">
+          <div class="metric-num grad">37</div>
+          <div class="metric-label">Knowledge files<br>across 6 domains</div>
+        </div>
+        <div class="card metric">
+          <div class="metric-num grad">3</div>
+          <div class="metric-label">Pinecone<br>namespaces</div>
+        </div>
+        <div class="card metric">
+          <div class="metric-num grad">4</div>
+          <div class="metric-label">Workflow cards<br>in execution registry</div>
+        </div>
+        <div class="card metric">
+          <div class="metric-num grad">3</div>
+          <div class="metric-label">Slash commands<br>/ skills</div>
+        </div>
+      </div>
+      <div style="max-width:600px;margin:0 auto;">
+        <div class="card" style="padding:32px;background:linear-gradient(135deg,rgba(124,111,255,0.08),rgba(45,212,191,0.05));">
+          <div style="font-size:15px;color:var(--text-mid);line-height:1.7;margin-bottom:20px;">One Pinecone account. One markdown file. Three skills. No framework, no agent state machine — just primitives that compose.</div>
+          <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
+            <span class="pill pill-amber"><code style="background:transparent;border:none;color:inherit;">strategy-awareness</code> — always on</span>
+            <span class="pill pill-teal"><code style="background:transparent;border:none;color:inherit;">/recall</code> — pull on demand</span>
+            <span class="pill pill-purple"><code style="background:transparent;border:none;color:inherit;">/wrap-up</code> — leave a trace</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- NAV -->
+<div id="nav">
+  <div id="dots"></div>
+  <span id="counter">1 / 12</span>
+</div>
+
+<div id="hint">
+  <span class="key">←</span>
+  <span class="key">→</span>
+  <span style="margin-left:4px;color:var(--text-dim);">navigate</span>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let cur = 0;
+
+  // Build dots
+  const dotsEl = document.getElementById('dots');
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' on' : '');
+    d.addEventListener('click', () => go(i));
+    dotsEl.appendChild(d);
+  });
+
+  const dots = Array.from(document.querySelectorAll('.dot'));
+  const counter = document.getElementById('counter');
+
+  function go(n) {
+    if (n === cur) return;
+    slides[cur].classList.add('exit');
+    slides[cur].classList.remove('active');
+    setTimeout(() => slides[cur - (cur > n ? -1 : 0) >= 0 ? cur : 0].classList.remove('exit'), 300);
+
+    const prev = cur;
+    cur = Math.max(0, Math.min(total - 1, n));
+
+    // cleanup exit on prev
+    setTimeout(() => { slides[prev].classList.remove('exit'); }, 350);
+
+    slides[cur].classList.add('active');
+    dots.forEach((d, i) => d.classList.toggle('on', i === cur));
+    counter.textContent = `${cur + 1} / ${total}`;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(cur + 1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                    { e.preventDefault(); go(cur - 1); }
+    if (e.key === 'Home') go(0);
+    if (e.key === 'End')  go(total - 1);
+  });
+
+  // Touch/swipe
+  let tx = 0;
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) go(dx < 0 ? cur + 1 : cur - 1);
+  }, { passive: true });
+</script>
+</body>
+</html>
